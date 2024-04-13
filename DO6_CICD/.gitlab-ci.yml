@@ -1,0 +1,63 @@
+stages:
+  - build
+  - codestyle
+  - test
+  - deploy
+
+build:
+  stage: build
+  tags: 
+    - build
+  script:
+    - echo "Start build"
+    - cd src/cat
+    - make s21_cat
+    - cd ../grep
+    - make s21_grep
+
+  artifacts:
+    paths:
+      - src/cat
+      - src/grep
+    expire_in: 30 days
+  after_script:
+    - bash src/telegram_bot.sh "build"
+
+codestyle:
+  stage: codestyle
+  tags: 
+    - style
+  script:
+    - echo "Start codestyle"
+    - cd src/cat
+    - clang-format -style=Google -i *.c *.h
+    - cd ../grep
+    - clang-format -style=Google -i *.c *.h
+    - git diff --exit-code
+  after_script:
+    - bash src/telegram_bot.sh "codestyle"
+
+test:
+  stage: test
+  tags: 
+    - test
+  script:
+    - echo "Start test"
+    - cd src/cat
+    - make test
+    - cd ../grep
+    - make test
+  after_script:
+    - bash src/telegram_bot.sh "test"
+
+deploy:
+  stage: deploy
+  tags: 
+    - deploy
+  script:
+    - echo "Start deploy"
+    - bash src/deploy.sh
+  when: manual
+  after_script:
+    - bash src/telegram_bot.sh "deploy"
+
